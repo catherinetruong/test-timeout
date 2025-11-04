@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Login Page</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Simple login container -->
+  <div class="login-container">
+    <h2>Login</h2>
+
+    <!-- Login form -->
+    <form id="loginForm">
+      <input id="username" type="text" placeholder="Username" required>
+      <input id="password" type="password" placeholder="Password" required>
+      <button type="submit">Login</button>
+    </form>
+
+    <!-- Message area for errors -->
+    <p id="loginMessage"></p>
+  </div>
+
+  <!-- JS file that handles login logic -->
+  <script src="authenticate-login.js"></script>
+</body>
+</html>

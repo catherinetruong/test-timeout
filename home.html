@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Home Page</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="home-container">
+    <h2>Welcome to the Dashboard</h2>
+    <p>You will be logged out after 1 minute of inactivity (for testing).</p>
+    <button id="logoutBtn">Logout</button>
+  </div>
+
+  <!-- Countdown timer display -->
+  <div id="inactivity-timer">Inactivity timer: 60s</div>
+
+  <!-- "Are you still there?" Modal -->
+  <div id="inactivity-modal" class="hidden">
+    <div class="modal-content">
+      <h3>Are you still there?</h3>
+      <p>You will be logged out in <span id="modal-countdown">30</span> seconds.</p>
+      <button id="stayLoggedInBtn">Stay Logged In</button>
+    </div>
+  </div>
+
+  <script>
+    // Redirect if not logged in
+    if (!localStorage.getItem('loggedInUser')) {
+      window.location.href = 'index.html';
+    }
+
+    // Manual logout
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      localStorage.removeItem('loggedInUser');
+      window.location.href = 'index.html';
+    });
+  </script>
+
+  <script src="inactivity-logout.js"></script>
+</body>
+</html>
