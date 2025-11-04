@@ -1,104 +1,126 @@
-// inactivity-logout.js
-// -----------------------------------------------------
-// Tracks inactivity, shows live countdown, and triggers
-// a modal at 30s warning before logout.
-// -----------------------------------------------------
+// =======================
+// CONFIGURATION
+// =======================
+const INACTIVITY_LIMIT = 60; // total inactivity seconds (testing)
+const MODAL_WARNING = 30;    // seconds before timeout to show modal
 
-window.addEventListener('DOMContentLoaded', () => {
-  const timerDisplay = document.getElementById('inactivity-timer');
-  const modal = document.getElementById('inactivity-modal');
-  const modalCountdown = document.getElementById('modal-countdown');
-  const stayLoggedInBtn = document.getElementById('stayLoggedInBtn');
+// =======================
+// STATE VARIABLES
+// =======================
+let remainingTime = INACTIVITY_LIMIT;
+let countdownInterval = null;
+let modalInterval = null;
+let isModalVisible = false;
 
-  const INACTIVITY_LIMIT = 60000; // 1 min for testing
-  const WARNING_TIME = 30000;     // Show modal in last 30s
+// =======================
+// DOM ELEMENTS
+// =======================
+const timerDisplay = document.getElementById('inactivity-timer');
+const modal = document.getElementById('inactivity-modal');
+const modalCountdown = document.getElementById('modal-countdown');
+const stayLoggedInBtn = document.getElementById('stayLoggedInBtn');
 
-  let remainingTime = INACTIVITY_LIMIT;
-  let countdownInterval;
-  let logoutTimeout;
-  let modalInterval;
+// =======================
+// FUNCTIONS
+// =======================
 
-  if (!localStorage.getItem('loggedInUser')) return;
+// Update bottom-right timer display
+function updateTimerDisplay() {
+  timerDisplay.textContent = `Inactivity timer: ${remainingTime}s`;
+}
 
-  startTracking();
+// Show modal with countdown
+function showModal() {
+  if (isModalVisible) return;
 
-  // Start listening for user actions
-  function startTracking() {
-    ['mousemove', 'keypress', 'scroll', 'click', 'touchstart'].forEach(evt =>
-      document.addEventListener(evt, resetTimer, false)
-    );
-    resetTimer();
-  }
+  isModalVisible = true;
+  modal.classList.remove('hidden');
+  modalCountdown.textContent = remainingTime;
 
-  // Reset inactivity timer on any user activity
-  function resetTimer() {
-    clearTimeout(logoutTimeout);
+  // Update modal countdown every second
+  modalInterval = setInterval(() => {
+    modalCountdown.textContent = remainingTime;
+  }, 1000);
+}
+
+// Hide modal
+function hideModal() {
+  if (!isModalVisible) return;
+
+  isModalVisible = false;
+  modal.classList.add('hidden');
+  clearInterval(modalInterval);
+}
+
+// Reset inactivity timer
+function resetTimer() {
+  remainingTime = INACTIVITY_LIMIT;
+  updateTimerDisplay();
+  hideModal();
+}
+
+// Logout user
+function logoutUser() {
+  clearInterval(countdownInterval);
+  clearInterval(modalInterval);
+  localStorage.removeItem('loggedInUser');
+  alert('You have been logged out due to inactivity.');
+  window.location.href = 'index.html';
+}
+
+// Start main countdown
+function startCountdown() {
+  clearInterval(countdownInterval);
+
+  countdownInterval = setInterval(() => {
+    remainingTime--;
+    updateTimerDisplay();
+
+    // Show modal if in warning period
+    if (remainingTime <= MODAL_WARNING && !isModalVisible) {
+      showModal();
+    }
+
+    // Timeout
+    if (remainingTime <= 0) {
+      logoutUser();
+    }
+  }, 1000);
+}
+
+// =======================
+// EVENT LISTENERS
+// =======================
+
+// Reset timer on user activity
+['mousemove', 'keydown', 'click', 'scroll'].forEach(evt => {
+  document.addEventListener(evt, resetTimer);
+});
+
+// Stay logged in button
+stayLoggedInBtn.addEventListener('click', () => {
+  resetTimer();
+});
+
+// Pause timers when tab hidden
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
     clearInterval(countdownInterval);
     clearInterval(modalInterval);
-    hideModal();
-
-    remainingTime = INACTIVITY_LIMIT;
-    updateCountdown();
-
-    // Countdown timer display
-    countdownInterval = setInterval(() => {
-      remainingTime -= 1000;
-      updateCountdown();
-
-      // Show modal when 30s remain
-      if (remainingTime === WARNING_TIME) {
-        showModal();
-      }
-
-      // Stop interval if time expires
-      if (remainingTime <= 0) {
-        clearInterval(countdownInterval);
-      }
-    }, 1000);
-
-    // Schedule logout
-    logoutTimeout = setTimeout(() => {
-      logoutUser();
-    }, INACTIVITY_LIMIT);
-  }
-
-  // Update countdown display (bottom-right)
-  function updateCountdown() {
-    const seconds = Math.max(Math.ceil(remainingTime / 1000), 0);
-    if (timerDisplay) timerDisplay.textContent = `Inactivity timer: ${seconds}s`;
-  }
-
-  // Show modal and start 30s warning countdown
-  function showModal() {
-    modal.classList.remove('hidden');
-    let modalTime = WARNING_TIME / 1000; // 30 seconds
-    modalCountdown.textContent = modalTime;
-
-    modalInterval = setInterval(() => {
-      modalTime--;
-      modalCountdown.textContent = modalTime;
-      if (modalTime <= 0) {
-        clearInterval(modalInterval);
-      }
-    }, 1000);
-  }
-
-  // Hide modal
-  function hideModal() {
-    modal.classList.add('hidden');
-  }
-
-  // Handle "Stay Logged In" button
-  stayLoggedInBtn.addEventListener('click', () => {
-    hideModal();
-    resetTimer(); // fully reset everything
-  });
-
-  // Auto logout
-  function logoutUser() {
-    hideModal();
-    alert('You have been logged out due to inactivity.');
-    localStorage.removeItem('loggedInUser');
-    window.location.href = 'index.html';
+  } else {
+    startCountdown();
+    if (remainingTime <= MODAL_WARNING) showModal();
   }
 });
+
+// =======================
+// INITIALIZATION
+// =======================
+
+// Only start timer if logged in
+if (localStorage.getItem('loggedInUser')) {
+  resetTimer();
+  startCountdown();
+} else {
+  window.location.href = 'index.html';
+}
